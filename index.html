@@ -183,7 +183,7 @@ h1,h2,h3{font-family:'Cormorant Garamond',Georgia,serif}
     </div>
     <button id="auth-submit" onclick="handleAuth()">Sign In</button>
     <div id="auth-msg"></div>
-    <p class="auth-note">Your answers are private and saved securely to your account.</p>
+    <p class="auth-note">Your answers are private and saved securely to your account.<br>New accounts require email confirmation before signing in.</p>
   </div>
 </div>
 
@@ -306,13 +306,17 @@ function setMsg(txt,cls=''){
 async function handleAuth(){
   const btn=document.getElementById('auth-submit');
   btn.disabled=true;
+  setMsg('Signing in...','#9A8570');
   if(authMode==='login'){
     const email=document.getElementById('li-email').value.trim();
     const pass=document.getElementById('li-pass').value;
     if(!email||!pass){setMsg('Please fill in both fields.','err');btn.disabled=false;return;}
-    const{error}=await sb.auth.signInWithPassword({email,password:pass});
-    if(error){setMsg(error.message,'err');}
-    // success → onAuthStateChange fires → showApp()
+    try{
+      const{data,error}=await sb.auth.signInWithPassword({email,password:pass});
+      if(error){setMsg('Error: '+error.message,'err');}
+      else if(!data?.session){setMsg('No session returned — check email confirmation.','err');}
+      // success → onAuthStateChange fires → showApp()
+    }catch(e){setMsg('Network error: '+e.message,'err');}
   } else {
     const email=document.getElementById('su-email').value.trim();
     const pass=document.getElementById('su-pass').value;
@@ -320,9 +324,11 @@ async function handleAuth(){
     if(!email||!pass||!pass2){setMsg('Please fill in all fields.','err');btn.disabled=false;return;}
     if(pass.length<8){setMsg('Password must be at least 8 characters.','err');btn.disabled=false;return;}
     if(pass!==pass2){setMsg('Passwords do not match.','err');btn.disabled=false;return;}
-    const{error}=await sb.auth.signUp({email,password:pass});
-    if(error){setMsg(error.message,'err');}
-    else{setMsg('Account created! Check your email to confirm, then sign in.','ok');}
+    try{
+      const{error}=await sb.auth.signUp({email,password:pass});
+      if(error){setMsg('Error: '+error.message,'err');}
+      else{setMsg('Account created! Check your email to confirm, then sign in.','ok');}
+    }catch(e){setMsg('Network error: '+e.message,'err');}
   }
   btn.disabled=false;
 }
@@ -348,7 +354,7 @@ async function doLogout(){
 sb.auth.onAuthStateChange(async(event,session)=>{
   if(session?.user){
     currentUser=session.user;
-    await loadAllAnswers();
+    try{ await loadAllAnswers(); }catch(e){ console.warn('loadAllAnswers failed:',e); }
     showApp();
   } else {
     currentUser=null;
