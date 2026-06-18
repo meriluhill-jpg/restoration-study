@@ -242,7 +242,7 @@ function showAuthSuccess(msg) {
 async function handleAuth(evt) {
   if (evt && evt.preventDefault) evt.preventDefault();
   console.log("Sign in button tapped");
-  try { showAuthSuccess("Button tapped. Checking login..."); } catch(_) {}
+  try { showAuthSuccess("Button tapped. Checking login..."); } catch(e) {}
   const email = document.getElementById('auth-email').value.trim();
   const pass = document.getElementById('auth-pass').value;
   const pass2 = document.getElementById('auth-pass2').value;
